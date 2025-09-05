@@ -1,0 +1,145 @@
+    
+    
+{
+  "info": {
+    "name": "GWI Favourites API",
+    "description": "Postman collection for testing GWI favourites endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List Favourites",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/favourites?user_id=<USER_UUID>",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["favourites"],
+          "query": [{"key": "user_id", "value": "<USER_UUID>"}]
+        }
+      }
+    },
+    {
+      "name": "Add Chart Favourite",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"chart\",\n  \"favorite\": true,\n  \"asset\": {\n    \"ID\": \"<ASSET_UUID>\",\n    \"Title\": \"Sales Q1\",\n    \"XAxisTitle\": \"Month\",\n    \"YAxisTitle\": \"Revenue\",\n    \"Data\": [100, 200, 150],\n    \"Description\": \"Quarter 1 sales chart\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/favourites/add?user_id=<USER_UUID>",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["favourites", "add"],
+          "query": [{"key": "user_id", "value": "<USER_UUID>"}]
+        }
+      }
+    },
+    {
+      "name": "Add Insight Favourite",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"insight\",\n  \"favorite\": false,\n  \"asset\": {\n    \"ID\": \"<ASSET_UUID>\",\n    \"Text\": \"40% of millennials spend more than 3 hours on social media daily\",\n    \"Description\": \"Millennial social media usage\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/favourites/add?user_id=<USER_UUID>",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["favourites", "add"],
+          "query": [{"key": "user_id", "value": "<USER_UUID>"}]
+        }
+      }
+    },
+    {
+      "name": "Add Audience Favourite",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"audience\",\n  \"favorite\": true,\n  \"asset\": {\n    \"ID\": \"<ASSET_UUID>\",\n    \"Gender\": \"Male\",\n    \"BirthCountry\": \"UK\",\n    \"AgeGroup\": \"24-35\",\n    \"SocialHours\": 4,\n    \"Purchases\": 2,\n    \"Description\": \"Males 24-35, UK, heavy social media users\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/favourites/add?user_id=<USER_UUID>",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["favourites", "add"],
+          "query": [{"key": "user_id", "value": "<USER_UUID>"}]
+        }
+      }
+    },
+    {
+      "name": "Update Favorite Status (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"favorite\": false\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/favourites/remove?user_id=<USER_UUID>&asset_id=<ASSET_UUID>",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["favourites", "remove"],
+          "query": [
+            {"key": "user_id", "value": "<USER_UUID>"},
+            {"key": "asset_id", "value": "<ASSET_UUID>"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Favourite (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/favourites/delete?user_id=<USER_UUID>&asset_id=<ASSET_UUID>",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["favourites", "delete"],
+          "query": [
+            {"key": "user_id", "value": "<USER_UUID>"},
+            {"key": "asset_id", "value": "<ASSET_UUID>"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Edit Favourite Description (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Updated description for asset\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/favourites/edit?user_id=<USER_UUID>&asset_id=<ASSET_UUID>",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["favourites", "edit"],
+          "query": [
+            {"key": "user_id", "value": "<USER_UUID>"},
+            {"key": "asset_id", "value": "<ASSET_UUID>"}
+          ]
+        }
+      }
+    }
+  ]
+}
