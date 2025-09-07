@@ -41,6 +41,7 @@ func setupRoutes() {
 
 }
 
+// List all the assets of the user with Favorite == true
 func handleFavourites(w http.ResponseWriter, r *http.Request) {
 	userID, ok := parseUserID(r, w)
 	if !ok {
@@ -61,12 +62,9 @@ func handleFavourites(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(favs)
 }
 
-// Adds an asset to user's favourites
+// Create an asset
 func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
-	// if r.Method != http.MethodDelete {
-	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	// 	return
-	// }
+
 	userID, ok := parseUserID(r, w)
 	if !ok {
 		return
@@ -132,7 +130,7 @@ func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(asset)
 }
 
-// Removes an asset from user's favourites
+// Edit the isFavorite field of an asset
 func handleRemoveFavourite(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -169,7 +167,7 @@ func handleRemoveFavourite(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Asset not found in favourites", http.StatusNotFound)
 }
 
-// Edits the description of an asset in user's favourites
+// Edits the description of an asset in general
 func handleEditFavourite(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -206,7 +204,7 @@ func handleEditFavourite(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Asset not found in favourites", http.StatusNotFound)
 }
 
-// Deletes an asset from user's favourites
+// Deletes an asset in general
 func handleDeleteFavourite(w http.ResponseWriter, r *http.Request) {
 	userID, ok := parseUserID(r, w)
 	if !ok {
