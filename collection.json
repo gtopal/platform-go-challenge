@@ -1,9 +1,7 @@
-    
-    
 {
   "info": {
     "name": "GWI Favourites API",
-    "description": "Postman collection for testing GWI favourites endpoints.",
+    "description": "Postman collection for testing GWI favourites endpoints. Supports pagination on List Favourites via 'limit' and 'offset' query parameters.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -13,12 +11,16 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/favourites?user_id=<USER_UUID>",
+          "raw": "http://localhost:8080/favourites?user_id=<USER_UUID>&limit=10&offset=0",
           "protocol": "http",
           "host": ["localhost"],
           "port": "8080",
           "path": ["favourites"],
-          "query": [{"key": "user_id", "value": "<USER_UUID>"}]
+          "query": [
+            {"key": "user_id", "value": "<USER_UUID>"},
+            {"key": "limit", "value": "10"},
+            {"key": "offset", "value": "0"}
+          ]
         }
       }
     },
@@ -29,7 +31,7 @@
         "header": [{"key": "Content-Type", "value": "application/json"}],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"type\": \"chart\",\n  \"favorite\": true,\n  \"asset\": {\n    \"ID\": \"<ASSET_UUID>\",\n    \"Title\": \"Sales Q1\",\n    \"XAxisTitle\": \"Month\",\n    \"YAxisTitle\": \"Revenue\",\n    \"Data\": [100, 200, 150],\n    \"Description\": \"Quarter 1 sales chart\"\n  }\n}"
+          "raw": "{\n  \"type\": \"chart\",\n  \"favorite\": true,\n  \"asset\": {\n    \"Title\": \"Sales Q1\",\n    \"XAxisTitle\": \"Month\",\n    \"YAxisTitle\": \"Revenue\",\n    \"Data\": [100, 200, 150],\n    \"Description\": \"Quarter 1 sales chart\"\n  }\n}"
         },
         "url": {
           "raw": "http://localhost:8080/favourites/add?user_id=<USER_UUID>",
@@ -48,7 +50,7 @@
         "header": [{"key": "Content-Type", "value": "application/json"}],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"type\": \"insight\",\n  \"favorite\": false,\n  \"asset\": {\n    \"ID\": \"<ASSET_UUID>\",\n    \"Text\": \"40% of millennials spend more than 3 hours on social media daily\",\n    \"Description\": \"Millennial social media usage\"\n  }\n}"
+          "raw": "{\n  \"type\": \"insight\",\n  \"favorite\": false,\n  \"asset\": {\n    \"Text\": \"40% of millennials spend more than 3 hours on social media daily\",\n    \"Description\": \"Millennial social media usage\"\n  }\n}"
         },
         "url": {
           "raw": "http://localhost:8080/favourites/add?user_id=<USER_UUID>",
@@ -67,7 +69,7 @@
         "header": [{"key": "Content-Type", "value": "application/json"}],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"type\": \"audience\",\n  \"favorite\": true,\n  \"asset\": {\n    \"ID\": \"<ASSET_UUID>\",\n    \"Gender\": \"Male\",\n    \"BirthCountry\": \"UK\",\n    \"AgeGroup\": \"24-35\",\n    \"SocialHours\": 4,\n    \"Purchases\": 2,\n    \"Description\": \"Males 24-35, UK, heavy social media users\"\n  }\n}"
+          "raw": "{\n  \"type\": \"audience\",\n  \"favorite\": true,\n  \"asset\": {\n    \"Gender\": \"Male\",\n    \"BirthCountry\": \"UK\",\n    \"AgeGroup\": \"24-35\",\n    \"SocialHours\": 4,\n    \"Purchases\": 2,\n    \"Description\": \"Males 24-35, UK, heavy social media users\"\n  }\n}"
         },
         "url": {
           "raw": "http://localhost:8080/favourites/add?user_id=<USER_UUID>",

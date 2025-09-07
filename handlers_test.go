@@ -39,6 +39,39 @@ func TestHandleFavourites(t *testing.T) {
 		t.Errorf("Expected asset Title to be 'Chart1', got %v", resp[0]["Title"])
 	}
 
+	// Test 1b: Pagination with limit=1, offset=0
+	reqPag := httptest.NewRequest("GET", "/favourites?user_id="+userID.String()+"&limit=1&offset=0", nil)
+	wPag := httptest.NewRecorder()
+	handleFavourites(wPag, reqPag)
+	if wPag.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", wPag.Code)
+	}
+	var respPag []map[string]interface{}
+	if err := json.Unmarshal(wPag.Body.Bytes(), &respPag); err != nil {
+		t.Fatalf("Failed to decode paginated response: %v", err)
+	}
+	if len(respPag) != 1 {
+		t.Fatalf("Expected 1 favourite with pagination, got %d", len(respPag))
+	}
+	if title, ok := respPag[0]["Title"].(string); !ok || title != "Chart1" {
+		t.Errorf("Expected paginated asset Title to be 'Chart1', got %v", respPag[0]["Title"])
+	}
+
+	// Test 1c: Pagination with limit=1, offset=1 (should be empty)
+	reqPag2 := httptest.NewRequest("GET", "/favourites?user_id="+userID.String()+"&limit=1&offset=1", nil)
+	wPag2 := httptest.NewRecorder()
+	handleFavourites(wPag2, reqPag2)
+	if wPag2.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", wPag2.Code)
+	}
+	var respPag2 []map[string]interface{}
+	if err := json.Unmarshal(wPag2.Body.Bytes(), &respPag2); err != nil {
+		t.Fatalf("Failed to decode paginated response: %v", err)
+	}
+	if len(respPag2) != 0 {
+		t.Fatalf("Expected 0 favourites with pagination offset, got %d", len(respPag2))
+	}
+
 	// Test 2: User with no favorite assets
 	user2ID := uuid.New()
 	user2 := &User{ID: user2ID}
@@ -56,6 +89,21 @@ func TestHandleFavourites(t *testing.T) {
 	}
 	if len(resp2) != 0 {
 		t.Fatalf("Expected 0 favourites, got %d", len(resp2))
+	}
+
+	// Test 2b: Pagination with limit=1, offset=0 (should be empty)
+	req2Pag := httptest.NewRequest("GET", "/favourites?user_id="+user2ID.String()+"&limit=1&offset=0", nil)
+	w2Pag := httptest.NewRecorder()
+	handleFavourites(w2Pag, req2Pag)
+	if w2Pag.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w2Pag.Code)
+	}
+	var resp2Pag []map[string]interface{}
+	if err := json.Unmarshal(w2Pag.Body.Bytes(), &resp2Pag); err != nil {
+		t.Fatalf("Failed to decode paginated response: %v", err)
+	}
+	if len(resp2Pag) != 0 {
+		t.Fatalf("Expected 0 favourites with pagination, got %d", len(resp2Pag))
 	}
 }
 

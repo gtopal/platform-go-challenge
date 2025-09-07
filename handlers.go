@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 )
@@ -59,7 +60,29 @@ func handleFavourites(w http.ResponseWriter, r *http.Request) {
 			favs = append(favs, asset)
 		}
 	}
-	json.NewEncoder(w).Encode(favs)
+	// Pagination: limit and offset query params
+	limit := 0
+	offset := 0
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if v, err := strconv.Atoi(l); err == nil && v > 0 {
+			limit = v
+		}
+	}
+	if o := r.URL.Query().Get("offset"); o != "" {
+		if v, err := strconv.Atoi(o); err == nil && v >= 0 {
+			offset = v
+		}
+	}
+	start := offset
+	if start > len(favs) {
+		start = len(favs)
+	}
+	end := len(favs)
+	if limit > 0 && start+limit < end {
+		end = start + limit
+	}
+	paged := favs[start:end]
+	json.NewEncoder(w).Encode(paged)
 }
 
 // Create an asset
