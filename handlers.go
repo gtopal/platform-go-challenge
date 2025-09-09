@@ -46,10 +46,12 @@ func setupRoutes() {
 func handleFavourites(w http.ResponseWriter, r *http.Request) {
 	userID, ok := parseUserID(r, w)
 	if !ok {
+		log.Printf("handleFavourites: invalid user_id")
 		return
 	}
 	user := store.GetUser(userID)
 	if user == nil {
+		log.Printf("handleFavourites: user not found %s", userID)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -60,6 +62,7 @@ func handleFavourites(w http.ResponseWriter, r *http.Request) {
 			favs = append(favs, asset)
 		}
 	}
+	log.Printf("handleFavourites: returning %d assets for user %s", len(favs), userID)
 	// Pagination: limit and offset query params
 	limit := 0
 	offset := 0
@@ -90,10 +93,12 @@ func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
 
 	userID, ok := parseUserID(r, w)
 	if !ok {
+		log.Printf("handleAddFavourite: invalid user_id")
 		return
 	}
 	user := store.GetUser(userID)
 	if user == nil {
+		log.Printf("handleAddFavourite: user not found %s", userID)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -103,6 +108,7 @@ func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
 		Favorite bool            `json:"favorite"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("handleAddFavourite: invalid request body: %v", err)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
@@ -112,6 +118,7 @@ func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Adding Chart asset: %s\n", req.Asset)
 		var c Chart
 		if err := json.Unmarshal(req.Asset, &c); err != nil {
+			log.Printf("handleAddFavourite: invalid chart asset: %v", err)
 			http.Error(w, "Invalid chart asset", http.StatusBadRequest)
 			return
 		}
@@ -124,6 +131,7 @@ func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Adding Insight asset: %s\n", req.Asset)
 		var i Insight
 		if err := json.Unmarshal(req.Asset, &i); err != nil {
+			log.Printf("handleAddFavourite: invalid insight asset: %v", err)
 			http.Error(w, "Invalid insight asset", http.StatusBadRequest)
 			return
 		}
@@ -136,6 +144,7 @@ func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Adding Audience asset: %s\n", req.Asset)
 		var a Audience
 		if err := json.Unmarshal(req.Asset, &a); err != nil {
+			log.Printf("handleAddFavourite: invalid audience asset: %v", err)
 			http.Error(w, "Invalid audience asset", http.StatusBadRequest)
 			return
 		}
@@ -145,9 +154,11 @@ func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
 		a.Favorite = req.Favorite
 		asset = &a
 	default:
+		log.Printf("handleAddFavourite: unknown asset type %s", req.Type)
 		http.Error(w, "Unknown asset type", http.StatusBadRequest)
 		return
 	}
+	log.Printf("handleAddFavourite: asset added for user %s, type %s, id %s", userID, req.Type, asset.GetID())
 	user.Favourites = append(user.Favourites, asset)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(asset)
@@ -156,19 +167,23 @@ func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
 // Edit the isFavorite field of an asset
 func handleRemoveFavourite(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
+		log.Printf("handleRemoveFavourite: method not allowed %s", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	userID, ok := parseUserID(r, w)
 	if !ok {
+		log.Printf("handleRemoveFavourite: invalid user_id")
 		return
 	}
 	assetID, ok := parseAssetID(r, w)
 	if !ok {
+		log.Printf("handleRemoveFavourite: invalid asset_id")
 		return
 	}
 	user := store.GetUser(userID)
 	if user == nil {
+		log.Printf("handleRemoveFavourite: user not found %s", userID)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -176,36 +191,43 @@ func handleRemoveFavourite(w http.ResponseWriter, r *http.Request) {
 		Favorite bool `json:"favorite"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("handleRemoveFavourite: invalid request body: %v", err)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 	for _, fav := range user.Favourites {
 		if fav.GetID() == assetID {
+			log.Printf("handleRemoveFavourite: updating favorite for asset %s to %v", assetID, req.Favorite)
 			fav.SetFavorite(req.Favorite)
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(fav)
 			return
 		}
 	}
+	log.Printf("handleRemoveFavourite: asset not found %s", assetID)
 	http.Error(w, "Asset not found in favourites", http.StatusNotFound)
 }
 
 // Edits the description of an asset in general
 func handleEditFavourite(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
+		log.Printf("handleEditFavourite: method not allowed %s", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	userID, ok := parseUserID(r, w)
 	if !ok {
+		log.Printf("handleEditFavourite: invalid user_id")
 		return
 	}
 	assetID, ok := parseAssetID(r, w)
 	if !ok {
+		log.Printf("handleEditFavourite: invalid asset_id")
 		return
 	}
 	user := store.GetUser(userID)
 	if user == nil {
+		log.Printf("handleEditFavourite: user not found %s", userID)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -213,17 +235,20 @@ func handleEditFavourite(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"description"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("handleEditFavourite: invalid request body: %v", err)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 	for _, fav := range user.Favourites {
 		if fav.GetID() == assetID {
+			log.Printf("handleEditFavourite: updating description for asset %s to '%s'", assetID, req.Description)
 			fav.SetDescription(req.Description)
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(fav)
 			return
 		}
 	}
+	log.Printf("handleEditFavourite: asset not found %s", assetID)
 	http.Error(w, "Asset not found in favourites", http.StatusNotFound)
 }
 
@@ -231,14 +256,17 @@ func handleEditFavourite(w http.ResponseWriter, r *http.Request) {
 func handleDeleteFavourite(w http.ResponseWriter, r *http.Request) {
 	userID, ok := parseUserID(r, w)
 	if !ok {
+		log.Printf("handleDeleteFavourite: invalid user_id")
 		return
 	}
 	assetID, ok := parseAssetID(r, w)
 	if !ok {
+		log.Printf("handleDeleteFavourite: invalid asset_id")
 		return
 	}
 	user := store.GetUser(userID)
 	if user == nil {
+		log.Printf("handleDeleteFavourite: user not found %s", userID)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -246,16 +274,19 @@ func handleDeleteFavourite(w http.ResponseWriter, r *http.Request) {
 	newFavs := make([]Asset, 0, len(user.Favourites))
 	for _, fav := range user.Favourites {
 		if fav.GetID() == assetID {
+			log.Printf("handleDeleteFavourite: deleting asset %s for user %s", assetID, userID)
 			found = true
 			continue
 		}
 		newFavs = append(newFavs, fav)
 	}
 	if !found {
+		log.Printf("handleDeleteFavourite: asset not found %s", assetID)
 		http.Error(w, "Asset not found in favourites", http.StatusNotFound)
 		return
 	}
 	user.Favourites = newFavs
+	log.Printf("handleDeleteFavourite: asset deleted, %d assets remain for user %s", len(user.Favourites), userID)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(user.Favourites)
 }
