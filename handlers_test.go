@@ -11,19 +11,25 @@ import (
 	"github.com/google/uuid"
 )
 
+func resetStore() {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	store.users = make(map[uuid.UUID]*User)
+}
+
 func TestHandleFavourites(t *testing.T) {
-	// Setup: create a user and add assets
+	resetStore()
 	userID := uuid.New()
 	user := &User{ID: userID}
 	chart := &Chart{ID: uuid.New(), Title: "Chart1", Favorite: true}
 	insight := &Insight{ID: uuid.New(), Text: "Insight1", Favorite: false}
 	user.Favourites = []Asset{chart, insight}
 	store.AddUser(user)
-
-	// Test 1: User with one favorite asset
-	req := httptest.NewRequest("GET", "/favourites?user_id="+userID.String(), nil)
+	token, _ := GenerateJWT(userID)
+	req := httptest.NewRequest("GET", "/favourites?limit=10&offset=0", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
-	handleFavourites(w, req)
+	AuthMiddleware(handleFavourites)(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
@@ -40,9 +46,10 @@ func TestHandleFavourites(t *testing.T) {
 	}
 
 	// Test 1b: Pagination with limit=1, offset=0
-	reqPag := httptest.NewRequest("GET", "/favourites?user_id="+userID.String()+"&limit=1&offset=0", nil)
+	reqPag := httptest.NewRequest("GET", "/favourites?limit=1&offset=0", nil)
+	reqPag.Header.Set("Authorization", "Bearer "+token)
 	wPag := httptest.NewRecorder()
-	handleFavourites(wPag, reqPag)
+	AuthMiddleware(handleFavourites)(wPag, reqPag)
 	if wPag.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", wPag.Code)
 	}
@@ -58,9 +65,10 @@ func TestHandleFavourites(t *testing.T) {
 	}
 
 	// Test 1c: Pagination with limit=1, offset=1 (should be empty)
-	reqPag2 := httptest.NewRequest("GET", "/favourites?user_id="+userID.String()+"&limit=1&offset=1", nil)
+	reqPag2 := httptest.NewRequest("GET", "/favourites?limit=1&offset=1", nil)
+	reqPag2.Header.Set("Authorization", "Bearer "+token)
 	wPag2 := httptest.NewRecorder()
-	handleFavourites(wPag2, reqPag2)
+	AuthMiddleware(handleFavourites)(wPag2, reqPag2)
 	if wPag2.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", wPag2.Code)
 	}
@@ -77,9 +85,11 @@ func TestHandleFavourites(t *testing.T) {
 	user2 := &User{ID: user2ID}
 	user2.Favourites = []Asset{&Insight{ID: uuid.New(), Text: "Insight2", Favorite: false}}
 	store.AddUser(user2)
-	req2 := httptest.NewRequest("GET", "/favourites?user_id="+user2ID.String(), nil)
+	token2, _ := GenerateJWT(user2ID)
+	req2 := httptest.NewRequest("GET", "/favourites?limit=10&offset=0", nil)
+	req2.Header.Set("Authorization", "Bearer "+token2)
 	w2 := httptest.NewRecorder()
-	handleFavourites(w2, req2)
+	AuthMiddleware(handleFavourites)(w2, req2)
 	if w2.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w2.Code)
 	}
@@ -92,9 +102,10 @@ func TestHandleFavourites(t *testing.T) {
 	}
 
 	// Test 2b: Pagination with limit=1, offset=0 (should be empty)
-	req2Pag := httptest.NewRequest("GET", "/favourites?user_id="+user2ID.String()+"&limit=1&offset=0", nil)
+	req2Pag := httptest.NewRequest("GET", "/favourites?limit=1&offset=0", nil)
+	req2Pag.Header.Set("Authorization", "Bearer "+token2)
 	w2Pag := httptest.NewRecorder()
-	handleFavourites(w2Pag, req2Pag)
+	AuthMiddleware(handleFavourites)(w2Pag, req2Pag)
 	if w2Pag.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w2Pag.Code)
 	}
@@ -108,6 +119,7 @@ func TestHandleFavourites(t *testing.T) {
 }
 
 func TestHandleAddFavourite_Chart(t *testing.T) {
+	resetStore()
 	userID := uuid.New()
 	store.AddUser(&User{ID: userID})
 
@@ -134,9 +146,11 @@ func TestHandleAddFavourite_Chart(t *testing.T) {
 			}
 			bodyBytes, _ := json.Marshal(body)
 
-			req := httptest.NewRequest(http.MethodPost, "/favourites/add?user_id="+userID.String(), bytes.NewReader(bodyBytes))
+			token, _ := GenerateJWT(userID)
+			req := httptest.NewRequest(http.MethodPost, "/favourites/add", bytes.NewReader(bodyBytes))
+			req.Header.Set("Authorization", "Bearer "+token)
 			w := httptest.NewRecorder()
-			handleAddFavourite(w, req)
+			AuthMiddleware(handleAddFavourite)(w, req)
 
 			if w.Code != http.StatusCreated {
 				t.Fatalf("expected status %d, got %d", http.StatusCreated, w.Code)
@@ -163,6 +177,7 @@ func TestHandleAddFavourite_Chart(t *testing.T) {
 }
 
 func TestHandleAddFavourite_Insight(t *testing.T) {
+	resetStore()
 	userID := uuid.New()
 	store.AddUser(&User{ID: userID})
 
@@ -189,9 +204,11 @@ func TestHandleAddFavourite_Insight(t *testing.T) {
 			}
 			bodyBytes, _ := json.Marshal(body)
 
-			req := httptest.NewRequest(http.MethodPost, "/favourites/add?user_id="+userID.String(), bytes.NewReader(bodyBytes))
+			token, _ := GenerateJWT(userID)
+			req := httptest.NewRequest(http.MethodPost, "/favourites/add", bytes.NewReader(bodyBytes))
+			req.Header.Set("Authorization", "Bearer "+token)
 			w := httptest.NewRecorder()
-			handleAddFavourite(w, req)
+			AuthMiddleware(handleAddFavourite)(w, req)
 
 			if w.Code != http.StatusCreated {
 				t.Fatalf("expected status %d, got %d", http.StatusCreated, w.Code)
@@ -218,6 +235,7 @@ func TestHandleAddFavourite_Insight(t *testing.T) {
 }
 
 func TestHandleAddFavourite_Audience(t *testing.T) {
+	resetStore()
 	userID := uuid.New()
 	store.AddUser(&User{ID: userID})
 
@@ -243,9 +261,11 @@ func TestHandleAddFavourite_Audience(t *testing.T) {
 			}
 			bodyBytes, _ := json.Marshal(body)
 
-			req := httptest.NewRequest(http.MethodPost, "/favourites/add?user_id="+userID.String(), bytes.NewReader(bodyBytes))
+			token, _ := GenerateJWT(userID)
+			req := httptest.NewRequest(http.MethodPost, "/favourites/add", bytes.NewReader(bodyBytes))
+			req.Header.Set("Authorization", "Bearer "+token)
 			w := httptest.NewRecorder()
-			handleAddFavourite(w, req)
+			AuthMiddleware(handleAddFavourite)(w, req)
 
 			if w.Code != http.StatusCreated {
 				t.Fatalf("expected status %d, got %d", http.StatusCreated, w.Code)
@@ -269,6 +289,7 @@ func TestHandleAddFavourite_Audience(t *testing.T) {
 }
 
 func TestHandleRemoveFavourite_TrueToFalse(t *testing.T) {
+	resetStore()
 	userID := uuid.New()
 	chart := &Chart{ID: uuid.New(), Title: "Chart1", Favorite: true}
 	user := &User{ID: userID, Favourites: []Asset{chart}}
@@ -276,9 +297,11 @@ func TestHandleRemoveFavourite_TrueToFalse(t *testing.T) {
 
 	reqBody := map[string]interface{}{"favorite": false}
 	bodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPut, "/favourites/remove?user_id="+userID.String()+"&asset_id="+chart.ID.String(), bytes.NewReader(bodyBytes))
+	token, _ := GenerateJWT(userID)
+	req := httptest.NewRequest(http.MethodPut, "/favourites/remove?asset_id="+chart.ID.String(), bytes.NewReader(bodyBytes))
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
-	handleRemoveFavourite(w, req)
+	AuthMiddleware(handleRemoveFavourite)(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
@@ -293,6 +316,7 @@ func TestHandleRemoveFavourite_TrueToFalse(t *testing.T) {
 }
 
 func TestHandleRemoveFavourite_FalseToTrue(t *testing.T) {
+	resetStore()
 	userID := uuid.New()
 	chart := &Chart{ID: uuid.New(), Title: "Chart2", Favorite: false}
 	user := &User{ID: userID, Favourites: []Asset{chart}}
@@ -300,9 +324,11 @@ func TestHandleRemoveFavourite_FalseToTrue(t *testing.T) {
 
 	reqBody := map[string]interface{}{"favorite": true}
 	bodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPut, "/favourites/remove?user_id="+userID.String()+"&asset_id="+chart.ID.String(), bytes.NewReader(bodyBytes))
+	token, _ := GenerateJWT(userID)
+	req := httptest.NewRequest(http.MethodPut, "/favourites/remove?asset_id="+chart.ID.String(), bytes.NewReader(bodyBytes))
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
-	handleRemoveFavourite(w, req)
+	AuthMiddleware(handleRemoveFavourite)(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
@@ -317,6 +343,7 @@ func TestHandleRemoveFavourite_FalseToTrue(t *testing.T) {
 }
 
 func TestHandleEditFavourite_ChangeDescription(t *testing.T) {
+	resetStore()
 	userID := uuid.New()
 	chart := &Chart{ID: uuid.New(), Title: "Chart3", Description: "Old Description", Favorite: true}
 	user := &User{ID: userID, Favourites: []Asset{chart}}
@@ -325,9 +352,11 @@ func TestHandleEditFavourite_ChangeDescription(t *testing.T) {
 	newDesc := "New Description"
 	reqBody := map[string]interface{}{"description": newDesc}
 	bodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPut, "/favourites/edit?user_id="+userID.String()+"&asset_id="+chart.ID.String(), bytes.NewReader(bodyBytes))
+	token, _ := GenerateJWT(userID)
+	req := httptest.NewRequest(http.MethodPut, "/favourites/edit?asset_id="+chart.ID.String(), bytes.NewReader(bodyBytes))
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
-	handleEditFavourite(w, req)
+	AuthMiddleware(handleEditFavourite)(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
@@ -342,6 +371,7 @@ func TestHandleEditFavourite_ChangeDescription(t *testing.T) {
 }
 
 func TestHandleDeleteFavourite_DeleteAsset(t *testing.T) {
+	resetStore()
 	userID := uuid.New()
 	chart := &Chart{ID: uuid.New(), Title: "Chart4", Favorite: true}
 	insight := &Insight{ID: uuid.New(), Text: "Insight4", Favorite: true}
@@ -349,9 +379,11 @@ func TestHandleDeleteFavourite_DeleteAsset(t *testing.T) {
 	store.AddUser(user)
 
 	// Check favourites before deletion
-	reqList := httptest.NewRequest(http.MethodGet, "/favourites?user_id="+userID.String(), nil)
+	token, _ := GenerateJWT(userID)
+	reqList := httptest.NewRequest(http.MethodGet, "/favourites?limit=10&offset=0", nil)
+	reqList.Header.Set("Authorization", "Bearer "+token)
 	wList := httptest.NewRecorder()
-	handleFavourites(wList, reqList)
+	AuthMiddleware(handleFavourites)(wList, reqList)
 	if wList.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, wList.Code)
 	}
@@ -363,9 +395,10 @@ func TestHandleDeleteFavourite_DeleteAsset(t *testing.T) {
 		t.Fatalf("expected 2 assets before deletion, got %d", len(respList))
 	}
 
-	req := httptest.NewRequest(http.MethodDelete, "/favourites/delete?user_id="+userID.String()+"&asset_id="+chart.ID.String(), nil)
+	req := httptest.NewRequest(http.MethodDelete, "/favourites/delete?asset_id="+chart.ID.String(), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
-	handleDeleteFavourite(w, req)
+	AuthMiddleware(handleDeleteFavourite)(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
@@ -382,9 +415,10 @@ func TestHandleDeleteFavourite_DeleteAsset(t *testing.T) {
 	}
 
 	// Check favourites after deletion
-	reqList2 := httptest.NewRequest(http.MethodGet, "/favourites?user_id="+userID.String(), nil)
+	reqList2 := httptest.NewRequest(http.MethodGet, "/favourites?limit=10&offset=0", nil)
+	reqList2.Header.Set("Authorization", "Bearer "+token)
 	wList2 := httptest.NewRecorder()
-	handleFavourites(wList2, reqList2)
+	AuthMiddleware(handleFavourites)(wList2, reqList2)
 	if wList2.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, wList2.Code)
 	}

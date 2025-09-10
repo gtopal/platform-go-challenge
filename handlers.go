@@ -34,19 +34,21 @@ func parseAssetID(r *http.Request, w http.ResponseWriter) (uuid.UUID, bool) {
 }
 
 func setupRoutes() {
-	http.HandleFunc("/favourites", handleFavourites)
-	http.HandleFunc("/favourites/add", handleAddFavourite)
-	http.HandleFunc("/favourites/remove", handleRemoveFavourite)
-	http.HandleFunc("/favourites/edit", handleEditFavourite)
-	http.HandleFunc("/favourites/delete", handleDeleteFavourite)
+	http.HandleFunc("/token", TokenHandler)
+	http.HandleFunc("/favourites", AuthMiddleware(handleFavourites))
+	http.HandleFunc("/favourites/add", AuthMiddleware(handleAddFavourite))
+	http.HandleFunc("/favourites/remove", AuthMiddleware(handleRemoveFavourite))
+	http.HandleFunc("/favourites/edit", AuthMiddleware(handleEditFavourite))
+	http.HandleFunc("/favourites/delete", AuthMiddleware(handleDeleteFavourite))
 
 }
 
 // List all the assets of the user with Favorite == true
 func handleFavourites(w http.ResponseWriter, r *http.Request) {
-	userID, ok := parseUserID(r, w)
-	if !ok {
-		log.Printf("handleFavourites: invalid user_id")
+	userID := getUserIDFromContext(r)
+	if userID == uuid.Nil {
+		log.Printf("handleFavourites: invalid user_id from token")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	user := store.GetUser(userID)
@@ -91,9 +93,10 @@ func handleFavourites(w http.ResponseWriter, r *http.Request) {
 // Create an asset
 func handleAddFavourite(w http.ResponseWriter, r *http.Request) {
 
-	userID, ok := parseUserID(r, w)
-	if !ok {
-		log.Printf("handleAddFavourite: invalid user_id")
+	userID := getUserIDFromContext(r)
+	if userID == uuid.Nil {
+		log.Printf("handleAddFavourite: invalid user_id from token")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	user := store.GetUser(userID)
@@ -171,9 +174,10 @@ func handleRemoveFavourite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	userID, ok := parseUserID(r, w)
-	if !ok {
-		log.Printf("handleRemoveFavourite: invalid user_id")
+	userID := getUserIDFromContext(r)
+	if userID == uuid.Nil {
+		log.Printf("handleRemoveFavourite: invalid user_id from token")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	assetID, ok := parseAssetID(r, w)
@@ -215,9 +219,10 @@ func handleEditFavourite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	userID, ok := parseUserID(r, w)
-	if !ok {
-		log.Printf("handleEditFavourite: invalid user_id")
+	userID := getUserIDFromContext(r)
+	if userID == uuid.Nil {
+		log.Printf("handleEditFavourite: invalid user_id from token")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	assetID, ok := parseAssetID(r, w)
@@ -254,9 +259,10 @@ func handleEditFavourite(w http.ResponseWriter, r *http.Request) {
 
 // Deletes an asset in general
 func handleDeleteFavourite(w http.ResponseWriter, r *http.Request) {
-	userID, ok := parseUserID(r, w)
-	if !ok {
-		log.Printf("handleDeleteFavourite: invalid user_id")
+	userID := getUserIDFromContext(r)
+	if userID == uuid.Nil {
+		log.Printf("handleDeleteFavourite: invalid user_id from token")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	assetID, ok := parseAssetID(r, w)
